@@ -1,16 +1,25 @@
 import { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
+import { Op } from 'sequelize';
 import { User } from '../models';
 
 export const login = async (req: Request, res: Response) => {
   try {
-    const { username, password } = req.body;
+    const username = String(req.body.username || '').trim();
+    const password = String(req.body.password || '');
 
     if (!username || !password) {
       return res.status(400).json({ message: 'Username and password are required' });
     }
 
-    const user = await User.findOne({ where: { username } });
+    const user = await User.findOne({
+      where: {
+        [Op.or]: [
+          { username },
+          { email: username }
+        ]
+      }
+    });
 
     if (!user) {
       return res.status(401).json({ message: 'Invalid credentials' });
@@ -63,7 +72,7 @@ export const register = async (req: Request, res: Response) => {
     }
 
     const existingUser = await User.findOne({
-      where: { $or: [{ username }, { email }] } as any
+      where: { [Op.or]: [{ username }, { email }] }
     });
 
     if (existingUser) {

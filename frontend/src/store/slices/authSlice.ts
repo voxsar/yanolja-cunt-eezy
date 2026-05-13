@@ -16,9 +16,13 @@ const initialState: AuthState = {
 
 export const login = createAsyncThunk(
   'auth/login',
-  async ({ username, password }: { username: string; password: string }) => {
-    const response = await authService.login(username, password);
-    return response.user;
+  async ({ username, password }: { username: string; password: string }, { rejectWithValue }) => {
+    try {
+      const response = await authService.login(username.trim(), password);
+      return response.user;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Login failed');
+    }
   }
 );
 
@@ -54,7 +58,7 @@ const authSlice = createSlice({
       })
       .addCase(login.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.error.message || 'Login failed';
+        state.error = (action.payload as string) || action.error.message || 'Login failed';
       })
       .addCase(getCurrentUser.pending, (state) => {
         state.loading = true;

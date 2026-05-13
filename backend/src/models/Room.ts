@@ -34,7 +34,7 @@ Room.init(
       primaryKey: true
     },
     roomNumber: {
-      type: DataTypes.STRING(20),
+      type: DataTypes.STRING(80),
       allowNull: false,
       unique: true
     },

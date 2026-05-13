@@ -97,3 +97,90 @@ export interface DashboardStats {
   monthlyRevenue: number;
   dirtyRooms: number;
 }
+
+export interface BusinessSource {
+  id: number;
+  shortCode: string;
+  name: string;
+  color?: string;
+  status: 'active' | 'inactive';
+}
+
+export interface Promotion {
+  id: number;
+  title: string;
+  category: string;
+  promotionType: string;
+  desktopDiscount: number;
+  mobileDiscount: number;
+  code?: string;
+  bookingStart: string;
+  bookingEnd: string;
+  status: 'active' | 'inactive';
+}
+
+export interface ChannelLog {
+  id: number;
+  source: string;
+  forDate: string;
+  operation: string;
+  roomType?: string;
+  ratePlan?: string;
+  requestAt: string;
+  processedAt?: string;
+  updatedValue?: string;
+  user?: string;
+}
+
+export interface ChannelMessageSetting {
+  id: number;
+  channelName: string;
+  autoMode: boolean;
+  customMessage: string;
+}
+
+export interface PaymentGatewaySetting {
+  id: number;
+  paymentType: string;
+  paymentCaption: string;
+  userId: string;
+  password: string;
+  merchantId: string;
+  gatewayUrl: string;
+  enabled: boolean;
+  linkSettings: Record<string, {
+    manualMode: boolean;
+    autoMode: boolean;
+    depositAmount: number | null;
+  }>;
+}
+
+export interface GuestPortalRequest {
+  id: number;
+  reservationNumber: string;
+  guestName: string;
+  date: string;
+  room?: string;
+  request: string;
+  bookingStatus: string;
+  status: 'open' | 'in_progress' | 'closed';
+}
+
+export interface Folio {
+  id: number;
+  folioNumber: string;
+  reservationNumber: string;
+  guestName: string;
+  arrival: string;
+  departure: string;
+  status: 'open' | 'settled' | 'void';
+  balance: number;
+}
+
+export interface OperationalSnapshot {
+  startDate: string;
+  days: number;
+  roomTypes: RoomType[];
+  rooms: Room[];
+  reservations: Reservation[];
+}

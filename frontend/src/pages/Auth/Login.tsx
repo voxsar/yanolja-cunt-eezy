@@ -21,10 +21,12 @@ const Login: React.FC = () => {
         <h2>Sign In</h2>
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label htmlFor="username">Username</label>
+            <label htmlFor="username">Username or Email</label>
             <input
               type="text"
               id="username"
+              autoComplete="username"
+              placeholder="admin"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               required
@@ -35,6 +37,8 @@ const Login: React.FC = () => {
             <input
               type="password"
               id="password"
+              autoComplete="current-password"
+              placeholder="admin123"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required

@@ -1,0 +1,1406 @@
+openapi: 3.0.3
+info:
+  title: Yanolja PMS Eezy API
+  description: |
+    Property Management System (PMS) REST API for Yanolja Eezy.
+
+    ## Authentication
+    All protected endpoints support two authentication methods:
+    - **Bearer Token (JWT)**: Obtain a token via `POST /api/auth/login` and send it as `Authorization: Bearer <token>`
+    - **API Key**: Send your API key in the `X-API-Key` request header
+  version: 1.0.0
+  contact:
+    name: Yanolja PMS Support
+
+servers:
+  - url: /api
+    description: Current server
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token obtained from POST /api/auth/login
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: Static API key set via the API_KEY environment variable
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+
+    LoginRequest:
+      type: object
+      required: [username, password]
+      properties:
+        username:
+          type: string
+          example: admin
+        password:
+          type: string
+          format: password
+          example: password123
+
+    LoginResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        user:
+          $ref: '#/components/schemas/User'
+
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        username:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+          enum: [admin, manager, front_desk, housekeeping]
+
+    RegisterRequest:
+      type: object
+      required: [username, email, password, role]
+      properties:
+        username:
+          type: string
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+        role:
+          type: string
+          enum: [admin, manager, front_desk, housekeeping]
+
+    Room:
+      type: object
+      properties:
+        id:
+          type: integer
+        roomNumber:
+          type: string
+        floor:
+          type: integer
+        status:
+          type: string
+          enum: [available, occupied, maintenance, dirty, clean]
+        RoomType:
+          $ref: '#/components/schemas/RoomType'
+
+    RoomType:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+        baseRate:
+          type: number
+        maxOccupancy:
+          type: integer
+
+    RoomInput:
+      type: object
+      required: [roomNumber, roomTypeId, floor]
+      properties:
+        roomNumber:
+          type: string
+        roomTypeId:
+          type: integer
+        floor:
+          type: integer
+        status:
+          type: string
+          enum: [available, occupied, maintenance, dirty, clean]
+
+    RoomAvailability:
+      type: object
+      properties:
+        checkIn:
+          type: string
+          format: date
+        checkOut:
+          type: string
+          format: date
+        rooms:
+          type: array
+          items:
+            $ref: '#/components/schemas/Room'
+
+    Guest:
+      type: object
+      properties:
+        id:
+          type: integer
+        firstName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        nationality:
+          type: string
+        idType:
+          type: string
+        idNumber:
+          type: string
+
+    GuestInput:
+      type: object
+      required: [firstName, lastName]
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+        nationality:
+          type: string
+        idType:
+          type: string
+        idNumber:
+          type: string
+
+    Reservation:
+      type: object
+      properties:
+        id:
+          type: integer
+        checkInDate:
+          type: string
+          format: date
+        checkOutDate:
+          type: string
+          format: date
+        status:
+          type: string
+          enum: [confirmed, checked_in, checked_out, cancelled, no_show]
+        totalAmount:
+          type: number
+        adults:
+          type: integer
+        children:
+          type: integer
+        specialRequests:
+          type: string
+        Guest:
+          $ref: '#/components/schemas/Guest'
+        Room:
+          $ref: '#/components/schemas/Room'
+
+    ReservationInput:
+      type: object
+      required: [guestId, roomId, checkInDate, checkOutDate]
+      properties:
+        guestId:
+          type: integer
+        roomId:
+          type: integer
+        checkInDate:
+          type: string
+          format: date
+        checkOutDate:
+          type: string
+          format: date
+        adults:
+          type: integer
+          default: 1
+        children:
+          type: integer
+          default: 0
+        specialRequests:
+          type: string
+        businessSourceId:
+          type: integer
+
+    HousekeepingTask:
+      type: object
+      properties:
+        id:
+          type: integer
+        taskType:
+          type: string
+          enum: [cleaning, inspection, maintenance, turndown]
+        status:
+          type: string
+          enum: [pending, in_progress, completed, skipped]
+        priority:
+          type: string
+          enum: [low, medium, high, urgent]
+        notes:
+          type: string
+        scheduledDate:
+          type: string
+          format: date
+        Room:
+          $ref: '#/components/schemas/Room'
+
+    HousekeepingTaskInput:
+      type: object
+      required: [roomId, taskType, scheduledDate]
+      properties:
+        roomId:
+          type: integer
+        taskType:
+          type: string
+          enum: [cleaning, inspection, maintenance, turndown]
+        priority:
+          type: string
+          enum: [low, medium, high, urgent]
+        notes:
+          type: string
+        scheduledDate:
+          type: string
+          format: date
+
+    DashboardStats:
+      type: object
+      properties:
+        totalRooms:
+          type: integer
+        occupiedRooms:
+          type: integer
+        availableRooms:
+          type: integer
+        occupancyRate:
+          type: number
+        todayCheckIns:
+          type: integer
+        todayCheckOuts:
+          type: integer
+        totalReservations:
+          type: integer
+        revenueToday:
+          type: number
+
+    OccupancyReport:
+      type: object
+      properties:
+        period:
+          type: string
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              date:
+                type: string
+                format: date
+              occupancyRate:
+                type: number
+              revenue:
+                type: number
+
+    BusinessSource:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        type:
+          type: string
+        commission:
+          type: number
+        isActive:
+          type: boolean
+
+    BusinessSourceInput:
+      type: object
+      required: [name, type]
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+        commission:
+          type: number
+        isActive:
+          type: boolean
+
+    Promotion:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        discountType:
+          type: string
+          enum: [percentage, fixed]
+        discountValue:
+          type: number
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        isActive:
+          type: boolean
+
+    PromotionInput:
+      type: object
+      required: [name, discountType, discountValue, startDate, endDate]
+      properties:
+        name:
+          type: string
+        discountType:
+          type: string
+          enum: [percentage, fixed]
+        discountValue:
+          type: number
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        isActive:
+          type: boolean
+
+    ChannelLog:
+      type: object
+      properties:
+        id:
+          type: integer
+        channel:
+          type: string
+        action:
+          type: string
+        status:
+          type: string
+        message:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    ChannelMessageSetting:
+      type: object
+      properties:
+        id:
+          type: integer
+        channel:
+          type: string
+        messageType:
+          type: string
+        template:
+          type: string
+        isEnabled:
+          type: boolean
+
+    PaymentGatewaySetting:
+      type: object
+      properties:
+        id:
+          type: integer
+        provider:
+          type: string
+        isEnabled:
+          type: boolean
+        config:
+          type: object
+
+    GuestPortalRequest:
+      type: object
+      properties:
+        id:
+          type: integer
+        requestType:
+          type: string
+        status:
+          type: string
+        notes:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    Folio:
+      type: object
+      properties:
+        id:
+          type: integer
+        reservationId:
+          type: integer
+        amount:
+          type: number
+        status:
+          type: string
+          enum: [open, settled, voided]
+        description:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    OperationalSnapshot:
+      type: object
+      properties:
+        occupancy:
+          type: object
+        revenue:
+          type: object
+        pendingCheckIns:
+          type: integer
+        pendingCheckOuts:
+          type: integer
+        housekeepingPending:
+          type: integer
+
+security:
+  - BearerAuth: []
+  - ApiKeyAuth: []
+
+paths:
+  /health:
+    get:
+      tags: [System]
+      summary: Health check
+      description: Returns API health status. No authentication required.
+      security: []
+      responses:
+        '200':
+          description: API is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: OK
+                  message:
+                    type: string
+                    example: Yanolja PMS API is running
+
+  # ─── Auth ───────────────────────────────────────────────────────────────────
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Login
+      description: Authenticate with username and password to receive a JWT token.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Register new user
+      description: Create a new user account. Requires admin privileges in production.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/me:
+    get:
+      tags: [Auth]
+      summary: Get current user
+      description: Returns the authenticated user's profile.
+      responses:
+        '200':
+          description: Current user profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # ─── Rooms ──────────────────────────────────────────────────────────────────
+
+  /rooms:
+    get:
+      tags: [Rooms]
+      summary: List all rooms
+      responses:
+        '200':
+          description: List of rooms
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Room'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    post:
+      tags: [Rooms]
+      summary: Create a room
+      description: Requires role `admin` or `manager`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoomInput'
+      responses:
+        '201':
+          description: Room created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Room'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /rooms/availability:
+    get:
+      tags: [Rooms]
+      summary: Get room availability
+      parameters:
+        - in: query
+          name: checkIn
+          schema:
+            type: string
+            format: date
+          required: true
+          description: Check-in date (YYYY-MM-DD)
+        - in: query
+          name: checkOut
+          schema:
+            type: string
+            format: date
+          required: true
+          description: Check-out date (YYYY-MM-DD)
+      responses:
+        '200':
+          description: Available rooms
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoomAvailability'
+
+  /rooms/{id}:
+    get:
+      tags: [Rooms]
+      summary: Get room by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Room details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Room'
+        '404':
+          description: Room not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    put:
+      tags: [Rooms]
+      summary: Update a room
+      description: Requires role `admin`, `manager`, or `front_desk`.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoomInput'
+      responses:
+        '200':
+          description: Room updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Room'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      tags: [Rooms]
+      summary: Delete a room
+      description: Requires role `admin`.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Room deleted
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # ─── Reservations ────────────────────────────────────────────────────────────
+
+  /reservations:
+    get:
+      tags: [Reservations]
+      summary: List all reservations
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [confirmed, checked_in, checked_out, cancelled, no_show]
+        - in: query
+          name: checkIn
+          schema:
+            type: string
+            format: date
+        - in: query
+          name: checkOut
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: List of reservations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Reservation'
+    post:
+      tags: [Reservations]
+      summary: Create a reservation
+      description: Requires role `admin`, `manager`, or `front_desk`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReservationInput'
+      responses:
+        '201':
+          description: Reservation created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Reservation'
+        '400':
+          description: Validation error / Room not available
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /reservations/{id}:
+    get:
+      tags: [Reservations]
+      summary: Get reservation by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Reservation details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Reservation'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    put:
+      tags: [Reservations]
+      summary: Update a reservation
+      description: Requires role `admin`, `manager`, or `front_desk`.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReservationInput'
+      responses:
+        '200':
+          description: Reservation updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Reservation'
+
+  /reservations/{id}/checkin:
+    post:
+      tags: [Reservations]
+      summary: Check in a guest
+      description: Requires role `admin`, `manager`, or `front_desk`.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Check-in successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Reservation'
+        '400':
+          description: Invalid status transition
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /reservations/{id}/checkout:
+    post:
+      tags: [Reservations]
+      summary: Check out a guest
+      description: Requires role `admin`, `manager`, or `front_desk`.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Check-out successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Reservation'
+
+  /reservations/{id}/cancel:
+    post:
+      tags: [Reservations]
+      summary: Cancel a reservation
+      description: Requires role `admin`, `manager`, or `front_desk`.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Reservation cancelled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Reservation'
+
+  # ─── Guests ──────────────────────────────────────────────────────────────────
+
+  /guests:
+    get:
+      tags: [Guests]
+      summary: List all guests
+      responses:
+        '200':
+          description: List of guests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Guest'
+    post:
+      tags: [Guests]
+      summary: Create a guest
+      description: Requires role `admin`, `manager`, or `front_desk`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GuestInput'
+      responses:
+        '201':
+          description: Guest created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Guest'
+
+  /guests/{id}:
+    get:
+      tags: [Guests]
+      summary: Get guest by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Guest details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Guest'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    put:
+      tags: [Guests]
+      summary: Update a guest
+      description: Requires role `admin`, `manager`, or `front_desk`.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GuestInput'
+      responses:
+        '200':
+          description: Guest updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Guest'
+    delete:
+      tags: [Guests]
+      summary: Delete a guest
+      description: Requires role `admin` or `manager`.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Guest deleted
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # ─── Housekeeping ────────────────────────────────────────────────────────────
+
+  /housekeeping/tasks:
+    get:
+      tags: [Housekeeping]
+      summary: List all housekeeping tasks
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [pending, in_progress, completed, skipped]
+        - in: query
+          name: date
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: List of tasks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/HousekeepingTask'
+    post:
+      tags: [Housekeeping]
+      summary: Create a housekeeping task
+      description: Requires role `admin`, `manager`, or `housekeeping`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HousekeepingTaskInput'
+      responses:
+        '201':
+          description: Task created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HousekeepingTask'
+
+  /housekeeping/tasks/{id}:
+    get:
+      tags: [Housekeeping]
+      summary: Get task by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Task details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HousekeepingTask'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    put:
+      tags: [Housekeeping]
+      summary: Update a task
+      description: Requires role `admin`, `manager`, or `housekeeping`.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HousekeepingTaskInput'
+      responses:
+        '200':
+          description: Task updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HousekeepingTask'
+    delete:
+      tags: [Housekeeping]
+      summary: Delete a task
+      description: Requires role `admin` or `manager`.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Task deleted
+
+  /housekeeping/house-status:
+    get:
+      tags: [Housekeeping]
+      summary: Get house status
+      description: Returns the current status of all rooms from a housekeeping perspective.
+      responses:
+        '200':
+          description: House status summary
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  clean:
+                    type: integer
+                  dirty:
+                    type: integer
+                  occupied:
+                    type: integer
+                  maintenance:
+                    type: integer
+                  rooms:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Room'
+
+  # ─── Dashboard ───────────────────────────────────────────────────────────────
+
+  /dashboard/stats:
+    get:
+      tags: [Dashboard]
+      summary: Get dashboard statistics
+      responses:
+        '200':
+          description: Dashboard stats
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardStats'
+
+  /dashboard/occupancy-report:
+    get:
+      tags: [Dashboard]
+      summary: Get occupancy report
+      parameters:
+        - in: query
+          name: from
+          schema:
+            type: string
+            format: date
+          description: Start date (YYYY-MM-DD)
+        - in: query
+          name: to
+          schema:
+            type: string
+            format: date
+          description: End date (YYYY-MM-DD)
+      responses:
+        '200':
+          description: Occupancy report data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OccupancyReport'
+
+  # ─── PMS ─────────────────────────────────────────────────────────────────────
+
+  /pms/snapshot:
+    get:
+      tags: [PMS]
+      summary: Get operational snapshot
+      description: Returns a real-time snapshot of current hotel operations.
+      responses:
+        '200':
+          description: Operational snapshot
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OperationalSnapshot'
+
+  /pms/business-sources:
+    get:
+      tags: [PMS]
+      summary: List business sources
+      responses:
+        '200':
+          description: List of business sources
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BusinessSource'
+    post:
+      tags: [PMS]
+      summary: Create a business source
+      description: Requires role `admin` or `manager`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BusinessSourceInput'
+      responses:
+        '201':
+          description: Business source created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BusinessSource'
+
+  /pms/business-sources/{id}:
+    put:
+      tags: [PMS]
+      summary: Update a business source
+      description: Requires role `admin` or `manager`.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BusinessSourceInput'
+      responses:
+        '200':
+          description: Business source updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BusinessSource'
+
+  /pms/promotions:
+    get:
+      tags: [PMS]
+      summary: List promotions
+      responses:
+        '200':
+          description: List of promotions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Promotion'
+    post:
+      tags: [PMS]
+      summary: Create a promotion
+      description: Requires role `admin` or `manager`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PromotionInput'
+      responses:
+        '201':
+          description: Promotion created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Promotion'
+
+  /pms/channel-logs:
+    get:
+      tags: [PMS - Channel Manager]
+      summary: List channel logs
+      parameters:
+        - in: query
+          name: channel
+          schema:
+            type: string
+        - in: query
+          name: status
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of channel logs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ChannelLog'
+
+  /pms/channel-message-settings:
+    get:
+      tags: [PMS - Channel Manager]
+      summary: List channel message settings
+      responses:
+        '200':
+          description: List of channel message settings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ChannelMessageSetting'
+
+  /pms/channel-message-settings/{id}:
+    put:
+      tags: [PMS - Channel Manager]
+      summary: Update a channel message setting
+      description: Requires role `admin` or `manager`.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChannelMessageSetting'
+      responses:
+        '200':
+          description: Setting updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChannelMessageSetting'
+
+  /pms/payment-gateway-settings:
+    get:
+      tags: [PMS - Configuration]
+      summary: List payment gateway settings
+      responses:
+        '200':
+          description: List of payment gateway settings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PaymentGatewaySetting'
+
+  /pms/payment-gateway-settings/{id}:
+    put:
+      tags: [PMS - Configuration]
+      summary: Update a payment gateway setting
+      description: Requires role `admin` or `manager`.
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentGatewaySetting'
+      responses:
+        '200':
+          description: Setting updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentGatewaySetting'
+
+  /pms/guest-portal-requests:
+    get:
+      tags: [PMS]
+      summary: List guest portal requests
+      responses:
+        '200':
+          description: List of guest portal requests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/GuestPortalRequest'
+
+  /pms/folios:
+    get:
+      tags: [PMS]
+      summary: List folios (unsettled bills)
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [open, settled, voided]
+      responses:
+        '200':
+          description: List of folios
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Folio'
+
+tags:
+  - name: System
+    description: System / health endpoints
+  - name: Auth
+    description: Authentication endpoints
+  - name: Rooms
+    description: Room management
+  - name: Reservations
+    description: Reservation management
+  - name: Guests
+    description: Guest database management
+  - name: Housekeeping
+    description: Housekeeping task management
+  - name: Dashboard
+    description: Dashboard statistics and reports
+  - name: PMS
+    description: PMS operations (business sources, promotions, folios, guest portal)
+  - name: PMS - Channel Manager
+    description: Channel manager logs and message settings
+  - name: PMS - Configuration
+    description: Payment gateway and system configuration

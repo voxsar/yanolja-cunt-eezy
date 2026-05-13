@@ -142,8 +142,9 @@ export const getRoomAvailability = async (req: AuthRequest, res: Response) => {
     whereClause.id = {
       [Op.notIn]: bookedRoomIds.map(r => r.roomId).filter(id => id !== null)
     };
-    whereClause.status = {
-      [Op.in]: ['available', 'clean']
+    whereClause.status = 'available';
+    whereClause.housekeepingStatus = {
+      [Op.ne]: 'out_of_order'
     };
 
     const availableRooms = await Room.findAll({

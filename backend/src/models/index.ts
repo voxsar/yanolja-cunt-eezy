@@ -5,6 +5,13 @@ import Room from './Room';
 import Guest from './Guest';
 import Reservation from './Reservation';
 import HousekeepingTask from './HousekeepingTask';
+import BusinessSource from './BusinessSource';
+import Promotion from './Promotion';
+import ChannelLog from './ChannelLog';
+import ChannelMessageSetting from './ChannelMessageSetting';
+import PaymentGatewaySetting from './PaymentGatewaySetting';
+import GuestPortalRequest from './GuestPortalRequest';
+import Folio from './Folio';
 
 // Define associations
 RoomType.hasMany(Room, { foreignKey: 'roomTypeId', as: 'rooms' });
@@ -28,5 +35,12 @@ export {
   Room,
   Guest,
   Reservation,
-  HousekeepingTask
+  HousekeepingTask,
+  BusinessSource,
+  Promotion,
+  ChannelLog,
+  ChannelMessageSetting,
+  PaymentGatewaySetting,
+  GuestPortalRequest,
+  Folio
 };
